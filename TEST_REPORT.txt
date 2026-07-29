@@ -1,0 +1,11 @@
+Validation completed before packaging:
+- Python syntax compilation: PASSED
+- Subtitle parser and comparison unit tests: 2/2 PASSED
+- Matching subtitles produce PASS: PASSED
+- Mismatched subtitles produce FAIL: PASSED
+- JavaScript syntax check with Node: PASSED
+- Jinja template delimiter check: PASSED
+- Uploaded sample media and generated reports removed from the package
+
+Runtime note:
+The first real analysis downloads the configured faster-whisper model. This download and full video transcription could not be executed in the packaging sandbox because external package/model downloads are disabled there. The Dockerfile installs all required runtime dependencies and uses the multilingual tiny model by default.

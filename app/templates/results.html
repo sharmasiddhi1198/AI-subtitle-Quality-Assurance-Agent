@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subtitle QA Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="page-shell">
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">VIDEO–SUBTITLE COMPARISON COMPLETE</p>
+            <h1>Subtitle QA Results</h1>
+            <p class="subtitle">These results compare the uploaded subtitle text with speech transcribed from the video.</p>
+        </div>
+        <a class="status-badge link-badge" href="{{ url_for('index') }}">Analyse another file</a>
+    </header>
+
+    <main>
+        <section class="panel upload-result">
+            <div class="section-heading">
+                <div>
+                    <p class="section-label">OVERALL DECISION</p>
+                    <h2>{{ report.original_subtitle_name }}</h2>
+                    <p class="muted">Video: {{ report.original_video_name }} · Detected language: {{ report.language }} ({{ report.language_probability }}% confidence)</p>
+                    
+                </div>
+            </div>
+            <div class="ai-decision-banner {{ report.overall_status|lower }}">
+                <div class="decision-title">🤖 AI Decision</div>
+            
+                <div class="decision-status">
+                    {{ report.overall_status }}
+                </div>
+            
+                <div class="confidence-meter">
+                    <div class="confidence-header">
+                        <span>AI Confidence</span>
+                        <strong>{{ report.overall_score }}%</strong>
+                    </div>
+                
+                    <div class="confidence-track">
+                        <div
+                            class="confidence-fill {{ report.overall_status | lower }}"
+                            style="width: {{ report.overall_score }}%;"
+                        ></div>
+                    </div>
+                
+                    <div class="confidence-level">
+                        Confidence Level:
+                        <strong>
+                            {% if report.overall_score >= 85 %}
+                                High
+                            {% elif report.overall_score >= 65 %}
+                                Medium
+                            {% else %}
+                                Low
+                            {% endif %}
+                        </strong>
+                    </div>
+                </div>
+            
+                <div class="decision-confidence">
+                    Language Confidence: {{ report.language_probability }}%
+                </div>
+                <div class="decision-summary">
+                    {% if report.overall_status == "PASS" %}
+                    ✅ Ready for release. Subtitle quality meets production standards.
+                    {% elif report.overall_status == "REVIEW" %}
+                    ⚠️ Manual review recommended before release.
+                    {% else %}
+                    ❌ Release blocked. Subtitle content differs significantly from detected speech. Review the AI-corrected subtitle below.
+                    {% endif %}
+                    </div>
+            </div>
+            <div class="quality-signals">
+                <div class="quality-signal">
+                    <span>Subtitle Formatting</span>
+                    <strong class="{% if report.format_score >= 85 %}signal-good{% elif report.format_score >= 65 %}signal-review{% else %}signal-bad{% endif %}">
+                        {% if report.format_score >= 85 %}
+                            Excellent
+                        {% elif report.format_score >= 65 %}
+                            Needs Review
+                        {% else %}
+                            Poor
+                        {% endif %}
+                    </strong>
+                </div>
+            
+                <div class="quality-signal">
+                    <span>Speech Alignment</span>
+                    <strong class="{% if report.text_accuracy >= 85 %}signal-good{% elif report.text_accuracy >= 65 %}signal-review{% else %}signal-bad{% endif %}">
+                        {% if report.text_accuracy >= 85 %}
+                            Excellent
+                        {% elif report.text_accuracy >= 65 %}
+                            Needs Review
+                        {% else %}
+                            Poor
+                        {% endif %}
+                    </strong>
+                </div>
+            
+                <div class="quality-signal">
+                    <span>Release Ready</span>
+                    <strong class="{% if report.overall_status == 'PASS' %}signal-good{% elif report.overall_status == 'REVIEW' %}signal-review{% else %}signal-bad{% endif %}">
+                        {% if report.overall_status == "PASS" %}
+                            Yes
+                        {% elif report.overall_status == "REVIEW" %}
+                            Manual Review
+                        {% else %}
+                            No
+                        {% endif %}
+                    </strong>
+                </div>
+            </div>
+            <div class="metric-grid">
+                <article class="metric-card"><span>Overall accuracy</span><strong>{{ report.overall_score }}%</strong></article>
+                <article class="metric-card"><span>Speech-text match</span><strong>{{ report.text_accuracy }}%</strong></article>
+                <article class="metric-card"><span>Format score</span><strong>{{ report.format_score }}%</strong></article>
+                <article class="metric-card"><span>Pass</span><strong>{{ report.pass_count }}</strong></article>
+                <article class="metric-card"><span>Review</span><strong>{{ report.review_count }}</strong></article>
+                <article class="metric-card"><span>Fail</span><strong>{{ report.fail_count }}</strong></article>
+            </div>
+            <div class="executive-summary">
+                <h3>📋 Executive Summary</h3>
+            
+                <div class="summary-grid">
+                    <div><strong>Total Subtitles:</strong> {{ report.executive_summary.total_subtitles }}</div>
+                    <div><strong>Passed:</strong> {{ report.executive_summary.passed }}</div>
+                    <div><strong>Review:</strong> {{ report.executive_summary.review }}</div>
+                    <div><strong>Failed:</strong> {{ report.executive_summary.failed }}</div>
+                </div>
+            
+                <div class="recommendation-box {{ report.overall_status|lower }}">
+                    <strong>Recommendation</strong>
+                    <p>{{ report.executive_summary.recommendation }}</p>
+                </div>
+            </div>
+            <div class="action-row">
+                <a class="primary-button button-link" href="{{ url_for('download_csv', report_id=report.report_id) }}"><span>Download CSV report</span><span>↓</span></a>
+            </div>
+        </section>
+
+        <section class="panel upload-result">
+            <div class="section-heading">
+                <div><p class="section-label">LINE-BY-LINE REVIEW</p><h2>Subtitle findings</h2></div>
+                <div class="filter-group">
+                    <input id="search-input" class="result-filter" type="search" placeholder="Search subtitle text">
+                    <select id="status-filter" class="result-filter">
+                        <option value="all">All statuses</option>
+                        <option value="pass">Pass</option>
+                        <option value="review">Review</option>
+                        <option value="fail">Fail</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Original subtitle</th>
+                            <th>Suggested subtitle</th>
+                            <th>Match</th>
+                            <th>Status</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                
+                    <tbody>
+                    {% for item in report.subtitles %}
+                    <tr
+    class="summary-row"
+    data-status="{{ item.status | lower }}"
+    data-search="{{ (item.text ~ ' ' ~ item.transcript_text ~ ' ' ~ item.suggested_subtitle) | lower }}"
+>
+    <td>
+        {{ item.start }}<br>
+        {{ item.end }}
+    </td>
+
+    <td>{{ item.text }}</td>
+
+    <td>{{ item.suggested_subtitle }}</td>
+
+    <td>
+        <strong>{{ item.text_similarity }}%</strong>
+    </td>
+
+    <td>
+        <span class="table-status table-status-{{ item.status | lower }}">
+            {{ item.status }}
+        </span>
+    </td>
+
+    <td>
+        <button
+            type="button"
+            class="details-button"
+            onclick="toggleDetails(this)"
+        >
+            View details
+        </button>
+    </td>
+</tr>
+
+<tr class="details-row hidden">
+    <td colspan="6">
+        <div class="details-panel">
+
+            <div class="detail-section">
+                <h3>Video transcript</h3>
+                <p>{{ item.transcript_text }}</p>
+            </div>
+
+            <div class="detail-grid">
+                <div class="detail-section">
+                    <h3>Original subtitle</h3>
+                    <div class="diff-text">
+                        {{ item.removed_html | safe }}
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Suggested subtitle</h3>
+                    <div class="diff-text">
+                        {{ item.added_html | safe }}
+                    </div>
+                    {% if item.auto_fix_available %}
+<div class="alert alert-success" style="margin-top:12px;">
+    <strong>✨ AI Auto-Fix Available</strong><br>
+    The system generated a corrected subtitle based on the detected speech.
+    <br><br>
+
+<a href="{{ url_for('download_corrected_srt', report_id=report.report_id) }}"
+   class="primary-button"
+   download>
+    📥 Download Corrected Subtitle (.srt)
+</a>
+</div>
+{% endif %}
+                </div>
+            </div>
+
+            <div class="detail-metrics">
+                <div class="detail-metric">
+                    <span>CPS</span>
+                    <strong>{{ item.characters_per_second }}</strong>
+                </div>
+            
+                <div class="detail-metric">
+                    <span>Similarity</span>
+                    <strong>{{ item.text_similarity }}%</strong>
+                </div>
+            
+                <div class="detail-metric">
+                    <span>Severity</span>
+                    <strong>{{ item.severity }}</strong>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h3>Issues</h3>
+
+                {% if item.issues %}
+                    <ul class="issue-list">
+                        {% for issue in item.issues %}
+                            <li>{{ issue }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No issues detected.</p>
+                {% endif %}
+                {% if item.explanation %}
+<div class="alert alert-info" style="margin-top:16px;">
+    <strong>AI Explanation</strong><br>
+    {{ item.explanation }}
+</div>
+{% endif %}
+            </div>
+
+        </div>
+    </td>
+</tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <p id="no-results" class="empty-state hidden">No rows match the selected filters.</p>
+            </div>
+        </section>
+    </main>
+    <footer>Accuracy depends on audio clarity and the selected Whisper model.</footer>
+</div>
+<script>
+const statusFilter = document.getElementById("status-filter");
+const searchInput = document.getElementById("search-input");
+const rows = [...document.querySelectorAll("tbody tr.summary-row")];
+const noResults = document.getElementById("no-results");
+function toggleDetails(button) {
+    const summaryRow = button.closest(".summary-row");
+    const detailsRow = summaryRow.nextElementSibling;
+
+    detailsRow.classList.toggle("hidden");
+
+    button.textContent = detailsRow.classList.contains("hidden")
+        ? "View details"
+        : "Hide details";
+}
+function applyFilters() {
+    const status = statusFilter.value;
+    const query = searchInput.value.trim().toLowerCase();
+    let visible = 0;
+    rows.forEach((row) => {
+        const statusMatch = status === "all" || row.dataset.status === status;
+        const textMatch = !query || row.dataset.search.includes(query);
+        row.hidden = !(statusMatch && textMatch);
+        if (!row.hidden) visible += 1;
+    });
+    noResults.classList.toggle("hidden", visible !== 0);
+}
+statusFilter.addEventListener("change", applyFilters);
+searchInput.addEventListener("input", applyFilters);
+</script>
+</body>
+</html>

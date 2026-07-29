@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: ai-subtitle-quality-assurance-agent
+    runtime: docker
+    plan: free
+    autoDeploy: true

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Subtitle Quality Assurance Agent</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="page-shell">
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">MEDIA QUALITY INTELLIGENCE</p>
+            <h1>AI Subtitle Quality Assurance Agent</h1>
+            <p class="subtitle">Compare spoken dialogue in a video with its SRT or VTT subtitles, review line-level issues, and download a report.</p>
+        </div>
+        <div class="status-badge"><span class="status-dot"></span>System ready</div>
+    </header>
+
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <section class="hero-grid">
+            <div class="panel upload-panel">
+                <div class="section-heading">
+                    <div><p class="section-label">STEP 1</p><h2>Upload assets</h2></div>
+                    <span class="secure-label">Temporary processing</span>
+                </div>
+
+                <form id="upload-form" method="POST" enctype="multipart/form-data">
+                    <div class="upload-grid">
+                        <label class="upload-zone" for="video">
+                            <span class="upload-icon">🎥</span>
+                            <span class="upload-title">Choose video file</span>
+                            <span class="upload-description">MP4, MOV, MKV, AVI or WEBM</span>
+                            <span id="video-file-name" class="selected-file">No video selected</span>
+                            <input id="video" name="video" type="file" accept=".mp4,.mov,.mkv,.avi,.webm" required>
+                        </label>
+
+                        <label class="upload-zone" for="subtitle">
+                            <span class="upload-icon">📄</span>
+                            <span class="upload-title">Choose subtitle file</span>
+                            <span class="upload-description">SRT or VTT</span>
+                            <span id="subtitle-file-name" class="selected-file">No subtitle selected</span>
+                            <input id="subtitle" name="subtitle" type="file" accept=".srt,.vtt" required>
+                        </label>
+                    </div>
+
+                    <div id="selection-confirmation" class="selection-confirmation hidden" aria-live="polite">
+                        <strong>Files selected successfully.</strong>
+                        <span>Click “Upload and analyse” to start speech transcription and comparison.</span>
+                    </div>
+
+                    <button id="submit-button" class="primary-button" type="submit">
+                        <span id="button-label">Upload and analyse</span><span>→</span>
+                    </button>
+
+                    <div id="progress-area" class="progress-area hidden" aria-live="polite">
+                        <div class="progress-header"><span>Analysis in progress</span><span>Please keep this page open</span></div>
+                        <div class="progress-track"><div class="progress-bar indeterminate"></div></div>
+                        <p class="progress-note">The first run may take longer while the speech model is downloaded.</p>
+                    </div>
+                </form>
+            </div>
+
+            <aside class="panel workflow-panel">
+                <p class="section-label">WORKFLOW</p>
+                <h2>What the agent checks</h2>
+                <div class="workflow-list">
+                    <div class="workflow-item"><span class="workflow-number">01</span><div><h3>Speech transcription</h3><p>Transcribes dialogue directly from the uploaded video.</p></div></div>
+                    <div class="workflow-item"><span class="workflow-number">02</span><div><h3>Text accuracy</h3><p>Compares each subtitle cue with speech at the same timestamp.</p></div></div>
+                    <div class="workflow-item"><span class="workflow-number">03</span><div><h3>Timing and readability</h3><p>Checks overlaps, duration, reading speed and line length.</p></div></div>
+                    <div class="workflow-item"><span class="workflow-number">04</span><div><h3>Downloadable report</h3><p>Provides filters, severity, similarity scores and CSV export.</p></div></div>
+                </div>
+            </aside>
+        </section>
+    </main>
+    <footer>Built with Python, Flask, faster-whisper, RapidFuzz, Docker and Render.</footer>
+</div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
