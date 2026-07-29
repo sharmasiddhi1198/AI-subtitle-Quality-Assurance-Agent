@@ -9,3 +9,6 @@ uploads/*
 reports/*
 !reports/.gitkeep
 .pytest_cache/
+TEST_REPORT.txt
+*.csv
+*.json
