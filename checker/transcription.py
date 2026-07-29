@@ -16,7 +16,7 @@ def _get_model():
     except Exception as exc:
         raise TranscriptionUnavailable(
             f"faster-whisper could not be imported: "
-            f"{type(exc)._name_}: {exc}"
+            f"{type(exc).__name__}: {exc}"
         ) from exc
 
     model_name = os.getenv("WHISPER_MODEL", "tiny")
