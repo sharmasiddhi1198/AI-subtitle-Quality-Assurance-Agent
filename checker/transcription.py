@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from functools import lru_cache
+import gc
 from pathlib import Path
 from typing import Any
 
@@ -10,7 +10,6 @@ class TranscriptionUnavailable(RuntimeError):
     """Raised when the speech-to-text engine cannot be used."""
 
 
-@lru_cache(maxsize=1)
 def _get_model():
     try:
         from faster_whisper import WhisperModel
@@ -54,7 +53,9 @@ def transcribe_video(video_path: str | Path) -> dict[str, Any]:
         ]
     except Exception as exc:
         raise TranscriptionUnavailable(f"Video transcription failed: {exc}") from exc
-
+    finally:
+        del model
+        gc.collect()
     if not segments:
         raise TranscriptionUnavailable(
             "No speech was detected in the video. Check that the video contains audible dialogue."
