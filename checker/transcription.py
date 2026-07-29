@@ -13,9 +13,10 @@ class TranscriptionUnavailable(RuntimeError):
 def _get_model():
     try:
         from faster_whisper import WhisperModel
-    except ImportError as exc:
+    except Exception as exc:
         raise TranscriptionUnavailable(
-            "The faster-whisper package is not installed. Run pip install -r requirements.txt."
+            f"faster-whisper could not be imported: "
+            f"{type(exc)._name_}: {exc}"
         ) from exc
 
     model_name = os.getenv("WHISPER_MODEL", "tiny")
