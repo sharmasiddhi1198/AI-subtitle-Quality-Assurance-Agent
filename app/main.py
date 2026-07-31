@@ -4,6 +4,14 @@ import os
 import sys
 import uuid
 from pathlib import Path
+from pathlib import Path
+import sys
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from utils.pdf_report import generate_ai_release_pdf
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
@@ -16,6 +24,8 @@ from checker.comparison import compare_subtitles_with_transcript
 from checker.report_generator import load_json_report, save_csv_report, save_json_report
 from checker.subtitle_parser import parse_subtitle_file
 from checker.transcription import TranscriptionUnavailable, transcribe_video
+from agent.graph import subtitle_agent
+from langchain_core.messages import HumanMessage, ToolMessage
 
 UPLOAD_FOLDER = BASE_DIR / "uploads"
 REPORT_FOLDER = BASE_DIR / "reports"
@@ -69,9 +79,37 @@ def index():
     try:
         video_name, video_path = save_upload(video)
         subtitle_name, subtitle_path = save_upload(subtitle)
-        subtitle_report = parse_subtitle_file(subtitle_path)
-        transcription = transcribe_video(video_path)
-        report = compare_subtitles_with_transcript(subtitle_report, transcription)
+        agent_result = subtitle_agent.invoke(
+            {
+                "messages": [
+                    HumanMessage(
+                        content="Run the complete subtitle quality assurance workflow."
+                    )
+                ],
+                "video_path": str(video_path),
+                "subtitle_path": str(subtitle_path),
+            }
+        )
+
+        report = agent_result.get("comparison_report")
+
+        if not report:
+            raise ValueError(
+                "The LangGraph agent did not return a comparison report."
+            )
+
+        report["agent_review"] = agent_result.get(
+            "final_response",
+            "",
+        )
+        report["final_decision"] = agent_result.get(
+            "final_decision",
+        agent_result.get("routing_reason", "REVIEW"),
+        )
+        report["execution_trace"] = agent_result.get(
+            "execution_trace",
+            [],
+        )
         report_id = uuid.uuid4().hex
         report.update(
             {
@@ -108,7 +146,27 @@ def download_csv(report_id: str):
         return "Report not found", 404
     return send_file(path, as_attachment=True, download_name="subtitle_qa_report.csv")
 
+@app.route("/download/pdf/<report_id>")
+def download_pdf(report_id: str):
+    if not report_id.isalnum():
+        return "Invalid report ID", 400
 
+    report_path = REPORT_FOLDER / f"{report_id}.json"
+
+    if not report_path.is_file():
+        return "Report not found", 404
+
+    report = load_json_report(report_path)
+
+    pdf_path = REPORT_FOLDER / f"{report_id}.pdf"
+    generate_ai_release_pdf(report, pdf_path)
+
+    return send_file(
+        pdf_path,
+        as_attachment=True,
+        download_name="ai_subtitle_release_report.pdf",
+        mimetype="application/pdf",
+    )
 @app.route("/report/<report_id>")
 def view_report(report_id: str):
     if not report_id.isalnum():

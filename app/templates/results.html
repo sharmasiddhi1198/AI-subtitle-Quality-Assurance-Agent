@@ -137,9 +137,60 @@
                     <p>{{ report.executive_summary.recommendation }}</p>
                 </div>
             </div>
-            <div class="action-row">
-                <a class="primary-button button-link" href="{{ url_for('download_csv', report_id=report.report_id) }}"><span>Download CSV report</span><span>↓</span></a>
-            </div>
+            {% if report.execution_trace %}
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3>🤖 Agent Execution Trace</h3>
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            {% for step in report.execution_trace %}
+                            <li>{{ step }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+                {% if report.agent_review %}
+                <div class="card mt-4">
+                     <div class="card-header">
+                          <h3>🤖 AI Release Assessment</h3>
+                    </div>
+
+                    <div class="card-body">
+                         <pre class="agent-review">{{ report.agent_review }}</pre>
+                      </div>
+                </div>
+                {% endif %}
+                <div class="report-actions">
+                    <a
+                        class="report-download-button report-download-button--csv"
+                        href="{{ url_for('download_csv', report_id=report.report_id) }}"
+                    >
+                        <span class="report-download-icon" aria-hidden="true">▦</span>
+                
+                        <span class="report-download-copy">
+                            <strong>Download CSV Report</strong>
+                            <small>Export detailed QA findings</small>
+                        </span>
+                
+                        <span class="report-download-arrow" aria-hidden="true">↓</span>
+                    </a>
+                
+                    <a
+                        class="report-download-button report-download-button--pdf"
+                        href="{{ url_for('download_pdf', report_id=report.report_id) }}"
+                    >
+                        <span class="report-download-icon" aria-hidden="true">▤</span>
+                
+                        <span class="report-download-copy">
+                            <strong>Download AI Report</strong>
+                            <small>Executive release assessment · PDF</small>
+                        </span>
+                
+                        <span class="report-download-arrow" aria-hidden="true">↓</span>
+                    </a>
+                </div>
         </section>
 
         <section class="panel upload-result">

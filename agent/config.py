@@ -17,4 +17,5 @@ if not api_key:
 llm = ChatOpenAI(
     model=MODEL_NAME,
     api_key=api_key,
+    reasoning_effort="none",
 )

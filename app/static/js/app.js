@@ -41,5 +41,27 @@
         submitButton.disabled = true;
         buttonLabel.textContent = "Uploading and analysing…";
         progressArea.classList.remove("hidden");
+        const agentStep = document.getElementById("agent-step");
+
+const steps = [
+    "📤 Upload received...",
+    "🎙️ Transcribing audio...",
+    "📄 Parsing subtitles...",
+    "🔍 Comparing subtitles with speech...",
+    "🤖 AI reasoning...",
+    "📋 Generating release assessment...",
+    "✅ Finalizing report..."
+];
+
+let index = 0;
+
+const interval = setInterval(() => {
+    if (index < steps.length) {
+        agentStep.textContent = steps[index];
+        index++;
+    } else {
+        clearInterval(interval);
+    }
+}, 1500);
     });
 })();
