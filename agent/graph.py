@@ -3,76 +3,71 @@ from langgraph.graph import END, START, StateGraph
 from agent.nodes import (
     comparison_node,
     final_review_node,
+    finalize_failure_node,
+    finalize_node,
+    planner_node,
     review_router_node,
     subtitle_parser_node,
     transcription_node,
 )
 from agent.state import AgentState
 
-def route_after_transcription(state: AgentState):
-    if not state.get("transcription"):
-        return END
-    return "continue"
 
+def route_from_planner(state: AgentState) -> str:
+    """Send execution to the next step selected by the planner."""
 
-def route_after_subtitle_parser(state: AgentState):
-    if not state.get("subtitle_report"):
-        return END
-    return "continue"
+    next_step = state.get("next_step", "finalize_failure")
 
+    valid_steps = {
+        "transcription",
+        "subtitle_parser",
+        "comparison",
+        "review_router",
+        "final_review",
+        "finalize",
+        "finalize_failure",
+    }
 
-def route_after_comparison(state: AgentState):
-    if not state.get("comparison_report"):
-        return END
-    return "continue"
+    if next_step not in valid_steps:
+        return "finalize_failure"
+
+    return next_step
+
 
 workflow = StateGraph(AgentState)
 
+workflow.add_node("planner", planner_node)
 workflow.add_node("transcription", transcription_node)
 workflow.add_node("subtitle_parser", subtitle_parser_node)
 workflow.add_node("comparison", comparison_node)
 workflow.add_node("review_router", review_router_node)
 workflow.add_node("final_review", final_review_node)
+workflow.add_node("finalize", finalize_node)
+workflow.add_node("finalize_failure", finalize_failure_node)
 
-workflow.add_edge(START, "transcription")
-workflow.add_conditional_edges(
-    "transcription",
-    route_after_transcription,
-    {
-        "continue": "subtitle_parser",
-        END: END,
-    },
-)
+workflow.add_edge(START, "planner")
 
 workflow.add_conditional_edges(
-    "subtitle_parser",
-    route_after_subtitle_parser,
+    "planner",
+    route_from_planner,
     {
-        "continue": "comparison",
-        END: END,
-    },
-)
-
-workflow.add_conditional_edges(
-    "comparison",
-    route_after_comparison,
-    {
-        "continue": "review_router",
-        END: END,
-    },
-)
-def route_after_review_router(state: AgentState):
-    if state.get("review_required"):
-        return "final_review"
-    return END
-workflow.add_conditional_edges(
-    "review_router",
-    route_after_review_router,
-    {
+        "transcription": "transcription",
+        "subtitle_parser": "subtitle_parser",
+        "comparison": "comparison",
+        "review_router": "review_router",
         "final_review": "final_review",
-        END: END,
+        "finalize": "finalize",
+        "finalize_failure": "finalize_failure",
     },
 )
-workflow.add_edge("final_review", END)
+
+workflow.add_edge("transcription", "planner")
+workflow.add_edge("subtitle_parser", "planner")
+workflow.add_edge("comparison", "planner")
+workflow.add_edge("review_router", "planner")
+workflow.add_edge("final_review", "planner")
+
+workflow.add_edge("finalize", END)
+workflow.add_edge("finalize_failure", END)
 
 subtitle_agent = workflow.compile()

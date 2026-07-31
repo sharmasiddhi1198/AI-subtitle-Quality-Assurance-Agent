@@ -92,7 +92,7 @@ def index():
         )
 
         report = agent_result.get("comparison_report")
-
+        
         if not report:
             raise ValueError(
                 "The LangGraph agent did not return a comparison report."

@@ -33,3 +33,11 @@ class AgentState(TypedDict, total=False):
 
     # Error handling
     errors: list[str]
+
+    # Autonomous workflow state
+    current_step: str
+    next_step: str
+    completed_steps: list[str]
+    tool_outputs: dict[str, Any]
+    retry_count: int
+    agent_status: str
